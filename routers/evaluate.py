@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
 from typing import Optional
 from db import get_session
-from services.rules_engine import evaluate as evaluate_rules
+from services.rules_engine import evaluate_rules
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ def evaluate_observation(
     rules = get_active_rules(session, as_of=as_of)
 
     obs_dict = input.model_dump()
-    results = evaluate_rules(observation=obs_dict, rules=[r.model_dump() for r in rules])
+    results = evaluate_rules(observation=obs_dict, rules=rules)
     
     return {
         "matched": len(results),

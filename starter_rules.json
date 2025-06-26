@@ -1,80 +1,81 @@
 [
   {
-    "name": "Attic Vent Ember Protection",
-    "description": "Attic, gable, and roof vents without ember-rated screens admit burning embers.",
-    "category": "Attic Ventilation",
-    "body_json": {
-      "conditions": [
-        { "fact": "attic_vent_has_screens", "operator": "==", "value": "False" }
-      ],
-      "vulnerability": "Ember-vulnerable vents",
-      "mitigations": {
-        "full": ["Install 1/8-inch metal mesh or ember-rated vent covers"],
-        "bridge": [
-          "Temporarily cover vents with fire-resistant fabric during Red-Flag periods"
-        ]
-      }
+    "name": "Ember-vulnerable vents",
+    "category": "vents",
+    "effective_date": "2024-01-01",
+    "logic": {
+      "and": [{ "==": [{ "var": "attic_vent_has_screens" }, "False"] }]
     },
-    "effective_date": "2024-06-25T00:00:00Z",
-    "retired_date": null
+    "params": {},
+    "explanation": "Attic vents lack ember-resistant screens.",
+    "mitigations": {
+      "full": ["Install 1/8-inch metal mesh or ember-rated vent covers"],
+      "bridge": [
+        "Temporarily cover vents with fire-resistant fabric during Red-Flag periods"
+      ]
+    }
   },
-
   {
-    "name": "Non-Class-A Roof in ≥ B Risk",
-    "description": "Roofs that are not Class A are vulnerable except in the very lowest wildfire zones (risk A).",
-    "category": "Roof",
-    "body_json": {
-      "conditions": [
+    "name": "Non-Class-A roof in risk zone",
+    "category": "roof",
+    "effective_date": "2024-01-01",
+    "logic": {
+      "and": [
         {
-          "fact": "roof_type",
-          "operator": "in",
-          "value": ["Class B", "Class C"]
+          "in": [{ "var": "roof_type" }, ["Class B", "Class C"]]
         },
         {
-          "fact": "wildfire_risk_category",
-          "operator": "in",
-          "value": ["B", "C", "D"]
+          "in": [{ "var": "wildfire_risk_category" }, ["B", "C", "D"]]
         }
-      ],
-      "vulnerability": "Roof covering can ignite in moderate / high risk zones",
-      "mitigations": {
-        "full": ["Replace roof covering with Class A assembly"],
-        "bridge": [
-          "Apply Class-A rated fire-resistant roof coating",
-          "Institute quarterly removal of combustible roof debris"
-        ]
-      }
+      ]
     },
-    "effective_date": "2024-06-25T00:00:00Z",
-    "retired_date": null
+    "params": {},
+    "explanation": "Roof covering can ignite under current wildfire risk category.",
+    "mitigations": {
+      "full": ["Replace roof covering with Class A assembly"],
+      "bridge": [
+        "Apply Class-A rated fire-resistant roof coating",
+        "Institute quarterly removal of combustible roof debris"
+      ]
+    }
   },
-
   {
-    "name": "Window Heat-Exposure From Nearby Vegetation",
-    "description": "Untempered windows too close to vegetation may fail under radiant heat.",
-    "category": "Windows",
-    "body_json": {
-      "conditions": [
-        { "fact": "window_type", "operator": "!=", "value": "Tempered Glass" },
-        {
-          "fact": "vegetation[*].distance_to_window",
-          "operator": "<",
-          "value": 60
-        }
-      ],
-      "vulnerability": "Window heat exposure",
-      "mitigations": {
-        "full": [
-          "Replace windows with tempered glass",
-          "Remove vegetation within calculated safe distance"
-        ],
-        "bridge": [
-          "Apply heat-resistant window film (-20 % distance)",
-          "Prune / treat nearby vegetation with flame retardant"
-        ]
-      }
+    "name": "Window heat exposure",
+    "category": "windows",
+    "effective_date": "2024-01-01",
+    "params": {
+      "base_ft": 30,
+      "window_mult": { "Single": 3, "Double": 2, "Tempered Glass": 1 },
+      "veg_div": { "Tree": 1, "Shrub": 2, "Grass": 3 }
     },
-    "effective_date": "2024-06-25T00:00:00Z",
-    "retired_date": null
+    "logic": {
+      ">": [
+        { "var": ["vegetation.0.distance_to_window"] },
+        {
+          "/": [
+            {
+              "*": [
+                { "var": "params.base_ft" },
+                {
+                  "+": [{ "*": [{ "var": "params.window_mult.Double" }, 1] }, 0]
+                }
+              ]
+            },
+            { "var": "params.veg_div.Tree" }
+          ]
+        }
+      ]
+    },
+    "explanation": "Window is vulnerable to vegetation heat-flux at current distance.",
+    "mitigations": {
+      "full": [
+        "Replace windows with tempered glass",
+        "Remove vegetation within safe distance"
+      ],
+      "bridge": [
+        "Apply heat-resistant window film (-20 % distance)",
+        "Prune / treat nearby vegetation with flame retardant"
+      ]
+    }
   }
 ]

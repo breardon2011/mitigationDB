@@ -1,120 +1,52 @@
+"""
+services/rules_engine.py  –  JSON-Logic-qubit edition
+----------------------------------------------------
+
+Evaluates every Rule row against one observation dict and
+returns the list of rules that hit.
+"""
+
 from __future__ import annotations
-from typing import Any, Iterable
-from functools import reduce
-import operator
-import re
 
-# ------------------------------------------------------------------
-# public API
-# ------------------------------------------------------------------
+from typing import Any, Dict, List
+
+from json_logic import jsonLogic        # ← comes from json-logic-qubit
+from models import Rule
 
 
-def evaluate(
-    observation: dict[str, Any], rules: Iterable[dict[str, Any]]
-) -> list[dict[str, Any]]:
+def evaluate_rules(
+    observation: Dict[str, Any],
+    rules: List[Rule],
+) -> List[Rule]:
     """
-    Returns a list like:
-    [
-        {
-            "vulnerability": "...",
-            "category": "...",
-            "matched_rule_id": 7,
-            "mitigations": { "full": [...], "bridge": [...] }
-        },
-        ...
-    ]
+    Evaluate *rules* against a single *observation*.
+
+    Parameters
+    ----------
+    observation
+        The payload received from the client (already validated /
+        converted to a plain dict by your Pydantic schema).
+
+    rules
+        The Rule rows you fetched from the database.
+
+    Returns
+    -------
+    list[Rule]
+        Only the rules whose logic evaluated to *truthy*.
     """
-    results: list[dict[str, Any]] = []
+    ctx_base = observation               # shortcut / keep original reference
+    hits: List[Rule] = []
 
-    for rule_row in rules:
-        rule = rule_row["body_json"]
-        if _conditions_pass(rule["conditions"], observation):
-            results.append(
-                {
-                    "vulnerability": rule["vulnerability"],
-                    "category": rule.get("category"),
-                    "matched_rule_id": rule_row["id"],
-                    "mitigations": rule.get("mitigations", {}),
-                }
-            )
+    for rule in rules:
+        context = {**ctx_base, "params": rule.params}  # merge params once
 
-    return results
+        try:
+            if bool(jsonLogic(rule.logic, context)):
+                hits.append(rule)
+        except Exception as exc:
+            # Bad rule?  Log and skip; never crash the request handler.
+            # (replace `print` with your logger of choice)
+            print(f"[rules_engine] '{rule.name}' raised {exc!r} – skipped")
 
-
-# ------------------------------------------------------------------
-# internals
-# ------------------------------------------------------------------
-
-
-_WILDCARD = re.compile(r"\[\*\]")
-
-_OPS = {
-    "==": operator.eq,
-    "!=": operator.ne,
-    "<": operator.lt,
-    "<=": operator.le,
-    ">": operator.gt,
-    ">=": operator.ge,
-    "in": lambda a, b: a in b,
-    "not_in": lambda a, b: a not in b,
-    "exists": lambda a, _: a is not None,
-}
-
-
-def _conditions_pass(conds: list[dict[str, Any]], obs: dict[str, Any]) -> bool:
-    for cond in conds:
-        fact_path = cond["fact"]
-        op = cond["operator"]
-        expected = cond.get("value")
-
-        values = _extract_values(obs, fact_path)
-
-        if not values:
-            return False  # path missing
-
-        if op == "exists":
-            # exists is satisfied if ANY path resolved
-            continue
-
-        op_fn = _OPS[op]
-
-        # For wildcard paths we check ANY value; for scalar path we still get a list.
-        if not any(op_fn(v, expected) for v in values):
-            return False
-
-    return True
-
-
-def _extract_values(obj: Any, dotted_path: str) -> list[Any]:
-    """
-    Supports dotted access and [*] wildcard for arrays.
-
-    ex:
-        vegetation[*].distance_to_window
-    """
-    parts = dotted_path.split(".")
-    current_level = [obj]  # start with root wrapped in list
-
-    for part in parts:
-        next_level: list[Any] = []
-
-        wildcard = _WILDCARD.search(part) is not None
-        key = _WILDCARD.sub("", part)
-
-        for item in current_level:
-            if isinstance(item, list):
-                iterable = item
-            else:
-                iterable = [item]
-
-            for element in iterable:
-                if isinstance(element, dict) and key in element:
-                    val = element[key]
-                    if wildcard and isinstance(val, list):
-                        next_level.extend(val)
-                    else:
-                        next_level.append(val)
-
-        current_level = next_level
-
-    return current_level
+    return hits

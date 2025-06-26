@@ -4,10 +4,10 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, select
-
+from services import rules_engine
 from db import get_session
 from models import Rule
-from schemas import RuleCreate, RuleRead, RuleUpdate  
+from schemas import RuleCreate, RuleRead, RuleUpdate, ObservationInput
 
 router = APIRouter(prefix="/api/v1/rules", tags=["rules"])
 
@@ -29,6 +29,15 @@ def _active_rules_stmt(as_of: datetime) -> select:
         .where((Rule.retired_date.is_(None)) | (Rule.retired_date > as_of))
         .order_by(Rule.effective_date.desc())
     )
+
+@router.post("/{rule_id}/test")
+def test_rule(rule_id: int,
+              obs: ObservationInput,
+              session: Session = Depends(get_session)):
+    rule = _rule_by_id(rule_id, session)
+    hits = rules_engine.evaluate(obs.model_dump(), [rule])
+    return {"hit": bool(hits), "detail": hits[0] if hits else None}
+
 
 
 # ──────────────────────────────────────────────────────────

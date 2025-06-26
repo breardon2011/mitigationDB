@@ -27,26 +27,29 @@ class ObservationInput(BaseModel):
 
 
 
-class RuleCreate(BaseModel):
+class RuleBase(BaseModel):
     name: str
-    description: Optional[str] = None
-    category: Optional[str] = None
-    body_json: dict
+    category: Optional[str]
+    condition: str            # required
+    params: dict = Field(default_factory=dict)
+    explanation: str
+    mitigations: Dict[str, List[str]]
     effective_date: datetime
+    retired_date: Optional[datetime]
+
+class RuleCreate(RuleBase):  pass
+
+class RuleUpdate(BaseModel):  # PATCH-style
+    name: Optional[str] = None
+    category: Optional[str] = None
+    condition: Optional[str] = None
+    params: Optional[dict] = None
+    explanation: Optional[str] = None
+    mitigations: Optional[dict] = None
+    effective_date: Optional[datetime] = None
     retired_date: Optional[datetime] = None
 
-
-class RuleRead(RuleCreate):
+class RuleRead(RuleBase):
     id: int
     created_at: datetime
     updated_at: datetime
-
-
-class RuleUpdate(BaseModel):
-    # all fields optional for PATCH-style update
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    body_json: Optional[Dict[str, Any]] = None
-    effective_date: Optional[datetime] = None
-    retired_date: Optional[datetime] = None
