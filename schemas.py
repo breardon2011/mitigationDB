@@ -30,7 +30,7 @@ class ObservationInput(BaseModel):
 class RuleBase(BaseModel):
     name: str
     category: Optional[str]
-    condition: str            # required
+    logic: Dict[str, Any]
     params: dict = Field(default_factory=dict)
     explanation: str
     mitigations: Dict[str, List[str]]
@@ -42,7 +42,7 @@ class RuleCreate(RuleBase):  pass
 class RuleUpdate(BaseModel):  # PATCH-style
     name: Optional[str] = None
     category: Optional[str] = None
-    condition: Optional[str] = None
+    logic: Optional[Dict[str, Any]] = None
     params: Optional[dict] = None
     explanation: Optional[str] = None
     mitigations: Optional[dict] = None

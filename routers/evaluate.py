@@ -1,5 +1,5 @@
 from schemas import ObservationInput
-from datetime import datetime
+from datetime import datetime, UTC
 from models import Rule
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 def get_active_rules(session: Session, as_of: Optional[datetime] = None) -> list[Rule]:
-    now = as_of or datetime.utcnow()
+    now = as_of or datetime.now(UTC)
     statement = select(Rule).where(
         Rule.effective_date <= now,
         (Rule.retired_date.is_(None) | (Rule.retired_date > now))

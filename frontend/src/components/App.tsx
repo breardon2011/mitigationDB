@@ -1,67 +1,157 @@
-import Avatar from 'components/Avatar'
-import logo from 'assets/logo.svg'
+import React, { useState } from 'react'
+import { classNames } from 'utils'
+import { UserRole, AppState } from './types'
+import ObservationEvaluator from './ObservationEvaluator'
+import RulesManager from './RulesManager'
+import RuleTester from './RuleTester'
 
-const randoms = [
-  [1, 2],
-  [3, 4, 5],
-  [6, 7]
+interface NavigationItem {
+  id: 'evaluation' | 'rules' | 'testing'
+  name: string
+  icon: string
+  roles: UserRole[]
+}
+
+const navigation: NavigationItem[] = [
+  {
+    id: 'evaluation',
+    name: 'Property Evaluation',
+    icon: '🏠',
+    roles: ['underwriter']
+  },
+  {
+    id: 'rules',
+    name: 'Rules Management',
+    icon: '⚙️',
+    roles: ['applied-science']
+  },
+  {
+    id: 'testing',
+    name: 'Rule Testing',
+    icon: '🧪',
+    roles: ['applied-science']
+  }
 ]
 
 function App() {
+  const [appState, setAppState] = useState<AppState>({
+    currentView: 'evaluation',
+    userRole: 'underwriter',
+    loading: false,
+    error: null
+  })
+
+  const updateAppState = (updates: Partial<AppState>) => {
+    setAppState((prev) => ({ ...prev, ...updates }))
+  }
+
+  const filteredNavigation = navigation.filter((item) =>
+    item.roles.includes(appState.userRole)
+  )
+
+  const renderCurrentView = () => {
+    switch (appState.currentView) {
+      case 'evaluation':
+        return (
+          <ObservationEvaluator
+            onError={(error) => updateAppState({ error })}
+          />
+        )
+      case 'rules':
+        return <RulesManager onError={(error) => updateAppState({ error })} />
+      case 'testing':
+        return <RuleTester onError={(error) => updateAppState({ error })} />
+      default:
+        return (
+          <ObservationEvaluator
+            onError={(error) => updateAppState({ error })}
+          />
+        )
+    }
+  }
+
   return (
-    <div className="relative overflow-hidden bg-white">
-      <div className="h-screen sm:pb-40 sm:pt-24 lg:pb-48 lg:pt-40">
-        <div className="relative mx-auto max-w-7xl px-4 sm:static sm:px-6 lg:px-8">
-          <div className="sm:max-w-lg">
-            <div className="my-4">
-              <Avatar size="large" src={logo} />
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Welcome!
-            </h1>
-            <p className="mt-4 text-xl text-gray-500">
-              This is a boilerplate build with Vite, React 18, TypeScript,
-              Vitest, Testing Library, TailwindCSS 3, Eslint and Prettier.
-            </p>
-          </div>
-          <div className="my-10">
-            <a
-              href="vscode://"
-              className="inline-block rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700 focus:ring-offset-2"
-            >
-              Start building for free
-            </a>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none mt-10 md:mt-0 lg:absolute lg:inset-y-0 lg:mx-auto lg:w-full lg:max-w-7xl"
-            >
-              <div className="absolute sm:left-1/2 sm:top-0 sm:translate-x-8 lg:left-1/2 lg:top-1/2 lg:-translate-y-1/2 lg:translate-x-8">
-                <div className="flex items-center space-x-6 lg:space-x-8">
-                  {randoms.map((random, number) => (
-                    <div
-                      key={`random-${random[number]}`}
-                      className="grid shrink-0 grid-cols-1 gap-y-6 lg:gap-y-8"
-                    >
-                      {random.map((number) => (
-                        <div
-                          key={`random-${number}`}
-                          className="h-64 w-44 overflow-hidden rounded-lg sm:opacity-0 lg:opacity-100"
-                        >
-                          <img
-                            src={`https://picsum.photos/600?random=${number}`}
-                            alt=""
-                            className="size-full bg-indigo-100 object-cover object-center"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 justify-between items-center">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  🔥 Wildfire Risk Assessment
+                </h1>
               </div>
+            </div>
+
+            {/* User Role Switcher */}
+            <div className="flex items-center space-x-4">
+              <label className="text-sm font-medium text-gray-700">Role:</label>
+              <select
+                value={appState.userRole}
+                onChange={(e) =>
+                  updateAppState({
+                    userRole: e.target.value as UserRole,
+                    currentView:
+                      e.target.value === 'underwriter' ? 'evaluation' : 'rules'
+                  })
+                }
+                className="rounded-md border-gray-300 text-sm"
+              >
+                <option value="underwriter">Underwriter</option>
+                <option value="applied-science">Applied Science</option>
+              </select>
             </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {filteredNavigation.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => updateAppState({ currentView: item.id })}
+                className={classNames(
+                  appState.currentView === item.id
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2'
+                )}
+              >
+                <span>{item.icon}</span>
+                <span>{item.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Error Banner */}
+      {appState.error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{appState.error}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => updateAppState({ error: null })}
+                className="text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {renderCurrentView()}
+      </main>
     </div>
   )
 }
