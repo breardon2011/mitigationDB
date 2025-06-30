@@ -519,24 +519,12 @@ async def ai_rule_assistance(description: str):
 - **Pattern Recognition**: Identify common vulnerability patterns
 - **Auto-Documentation**: Generate human-readable rule explanations
 - **Testing Assistance**: Create comprehensive test cases automatically
+  |
 
-### 🎯 **Implementation Priority**
+#### **5. Logging and monitoring**
 
-| Priority            | Feature            | Timeline | Impact                 |
-| ------------------- | ------------------ | -------- | ---------------------- |
-| 🔴 **High**         | Database Migration | Q1       | Production Readiness   |
-| 🟡 **Medium**       | Queue System       | Q2       | Scalability Foundation |
-| 🟢 **Low**          | AI Assistance      | Q3-Q4    | User Experience        |
-| 🔵 **Nice-to-Have** | Advanced Frontend  | Ongoing  | User Experience        |
+- Right now we don't have comprehensive monitoring, session recording, logging. Adding this would make a complete system
 
-### 💡 **Technical Considerations**
+#### **6. Completely flexible observations**
 
-- **Backward Compatibility**: Ensure smooth migration paths for existing data
-- **Performance Monitoring**: Implement comprehensive metrics and alerting
-- **Security Hardening**: Enhanced authentication, authorization, and audit logging
-- **Documentation**: Maintain comprehensive API documentation as features evolve
-- **Testing Strategy**: Expand test coverage for new scalability components
-
----
-
-_These enhancements will transform the system from a proof-of-concept into a production-ready, enterprise-scale wildfire mitigation platform._
+- Right now we pretty much expect a shape of observations based on the contract, we could take in a flexible shape and evaluate it against the rules engine.

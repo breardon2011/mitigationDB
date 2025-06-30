@@ -34,9 +34,47 @@ def _active_rules_stmt(as_of: datetime) -> select:
 def test_rule(rule_id: int,
               obs: ObservationInput,
               session: Session = Depends(get_session)):
-    rule = _rule_by_id(rule_id, session)
-    hits = rules_engine.evaluate(obs.model_dump(), [rule])
-    return {"hit": bool(hits), "detail": hits[0] if hits else None}
+    """Test a single rule against an observation."""
+    try:
+        rule = _rule_by_id(rule_id, session)
+        
+        # Convert observation to dict
+        if hasattr(obs, 'model_dump'):
+            obs_dict = obs.model_dump()
+        elif hasattr(obs, 'dict'):
+            obs_dict = obs.dict()
+        else:
+            obs_dict = dict(obs)
+        
+        # Use the correct function name and handle the response
+        matching_rules = rules_engine.evaluate_rules(obs_dict, [rule])
+        
+        hit = len(matching_rules) > 0
+        detail = None
+        
+        if hit:
+            # Convert rule to the expected response format
+            matched_rule = matching_rules[0]
+            detail = {
+                "vulnerability": matched_rule.name,
+                "category": matched_rule.category,
+                "matched_rule_id": matched_rule.id,
+                "explanation": matched_rule.explanation,
+                "mitigations": matched_rule.mitigations,
+            }
+        
+        return {
+            "hit": hit, 
+            "detail": detail,
+            "rule_name": rule.name,
+            "observation_fields": list(obs_dict.keys())
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Rule test failed: {str(e)}"
+        )
 
 
 

@@ -2,10 +2,10 @@
 const API_BASE_URL = 'http://localhost:8000' // Adjust to your backend URL
 
 export interface ObservationInput {
-  attic_vent_has_screens?: string
-  roof_type?: string
-  wildfire_risk_category?: string
-  'Window Type'?: string
+  attic_vent_has_screens?: 'True' | 'False'
+  roof_type?: 'Class A' | 'Class B' | 'Class C'
+  wildfire_risk_category?: 'A' | 'B' | 'C' | 'D'
+  'Window Type'?: 'Single' | 'Double' | 'Tempered Glass'
   vegetation?: Array<{
     Type: string
     distance_to_window: number
