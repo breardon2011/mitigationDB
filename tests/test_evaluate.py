@@ -72,7 +72,7 @@ def test_non_class_a_roof_no_match():
     assert all("Non-Class-A roof in risk zone" not in v["name"] for v in data["vulnerabilities"])
 
 def test_window_heat_exposure_match():
-    """Should match Window heat exposure for distance_to_window = 40."""
+    """Should match Window heat exposure for distance_to_window = 90."""
     resp = client.post("/api/v1/evaluate", json={
         "attic_vent_has_screens": "True",
         "roof_type": "Class A",
@@ -97,6 +97,24 @@ def test_window_heat_exposure_no_match():
         "wildfire_risk_category": "A",
         "Window Type": "Double",
         "vegetation": [{"Type": "Tree", "distance_to_window": 10}]
+    })
+    data = resp.json()
+    assert resp.status_code == 200
+    assert all("Window heat exposure" not in v["name"] for v in data["vulnerabilities"])
+
+def test_window_heat_exposure_no_match_far_vegetation():
+    """Should NOT match Window heat exposure when vegetation is very far away (500+ feet)."""
+    resp = client.post("/api/v1/evaluate", json={
+        "attic_vent_has_screens": "True",
+        "roof_type": "Class A",
+        "wildfire_risk_category": "A",
+        "Window Type": "Double",
+        "vegetation": [
+            {
+                "Type": "Tree",
+                "distance_to_window": 500  # Very far away - should be safe
+            }
+        ]
     })
     data = resp.json()
     assert resp.status_code == 200

@@ -49,7 +49,7 @@
       "veg_div": { "Tree": 1, "Shrub": 2, "Grass": 3 }
     },
     "logic": {
-      ">": [
+      "<": [
         { "var": ["vegetation.0.distance_to_window"] },
         {
           "/": [
